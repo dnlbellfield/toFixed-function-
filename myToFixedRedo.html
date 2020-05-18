@@ -1,0 +1,221 @@
+<script src="simpletest.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+(function (root, undefined) {
+    function loopReduce (num, dec) {
+        if (num.length === dec) {
+          return num;
+        } else {
+          if (num[num.length - 1] >= 5) {
+              // add increase to 2nd to last num
+            var currentLastDigit = num[num.length - 1];
+            var currentSecondToLastCharacterAsDigit = new Number(num[num.length - 2]);
+            var increasedCurrentSecondToLastCharacterAsDigit = currentSecondToLastCharacterAsDigit + 1;
+            var increasedCurrentSecondToLastCharacterAsString = increasedCurrentSecondToLastCharacterAsDigit.toString();
+                //delete old
+            var numStripped = num.substr(0, num.length-2);
+            var increasedCurrentSecondToLastCharacterAsStringAddedToNumStripped = numStripped + increasedCurrentSecondToLastCharacterAsString;
+            var newNum = increasedCurrentSecondToLastCharacterAsStringAddedToNumStripped.substring(0, num.length-1);
+            // not sure what else might need to be processed
+               if (newNum.length > dec) {
+                    return loopReduce(newNum, dec);
+                    } else {
+                        return newNum;
+                    }
+          
+       } else {
+        var numStripped = num.substr(0, num.length-2);
+         var finalNum = numStripped + num.substr(0,1);
+        // console.log('finalNum', finalNum);
+         return finalNum;
+       }
+    }
+}
+    function repeatZeros(times) {
+    result = '';
+    for (var i = 0; i < times; i++) {
+      result += '0';  
+    } 
+      return result;
+  }
+
+  function myToFixed(number, decimal) {
+
+    if (typeof number !== 'number' ) {
+      throw new TypeError('number must be a number');
+    }
+    if (!decimal) {
+      decimal = 0;
+    } else {
+      if (typeof decimal !== 'number' ) {
+        throw new TypeError('decimal must be a number');
+      }
+    }
+
+    var number = number.toString();
+
+    var regexToFindAPeriodInNumberArg = new RegExp(/\./);
+    var periodFoundInString = number.match(regexToFindAPeriodInNumberArg);
+
+
+    var rightSide = number.split('.')[1];
+    var leftSide = number.split('.')[0];
+    var leftOfThePeriod = leftSide.substr(-1)
+
+    // case: no period '.' found in original number
+    if (periodFoundInString === null) {
+        // if decimal arg is provided and it is greater than 0
+        // then adjust the length of the what would be the
+        // the rightSide by adding the leftSide + '.' + return of repeatZeroes(decimal)
+        if (decimal > 0) {
+            return leftSide + '.' + repeatZeros(decimal);
+        } else {
+            return leftSide;
+        }
+    } else {
+        if (rightSide > decimal && decimal === 0) {
+            if (leftOfThePeriod >= 5) {
+                return Math.round( leftSide + '.' + rightSide);
+            }
+            return Math.round(leftSide + '.' + loopReduce(rightSide,decimal));
+        }
+        if (rightSide > decimal && new Number(leftOfThePeriod) < 5) {
+            // look to see if loop reduce works
+            return leftSide + '.' + loopReduce(rightSide, decimal);
+        }
+        // reduce the length of the rightSide determined by decimal
+        if (decimal < rightSide.length) {
+            // 99.99 (99.99, 1)
+            // rightside.length = 2
+            // if decimal is 1, 
+            // find index of decimal within rightSide string
+            // 99.99 '99.99'subtr[decimal] 99.99.substr[1]
+            var rightSideReduced = rightSide.substr(decimal);
+            var numberToBeRounded = leftSide + '.' + rightSideReduced;
+            var numberToBeRoundedAsString = Math.round(numberToBeRounded).toString();
+            // after number has been rounded we're only left 
+            // with the left side. Add back the right side
+            var rightSide = '';
+            if (decimal > rightSide.length) {
+                return numberToBeRoundedAsString + '.' + repeatZeros(decimal);
+            } else {
+                return numberToBeRoundedAsString;
+            }
+               
+        //Newest thing added currently 8 passing tests, 6 failures
+        } else if (decimal === rightSide.length) {
+            return leftSide + '.' + rightSide;
+        } else {
+            // extend the length of the rightSide determined by decimal
+            // var reducedRightSide = rightSide.substr(decimal);
+            // var numberToBeRounded = leftSide + '.' + reducedRightSide;
+            // var numberToBeRoundedAsString = Math.round(numberToBeRounded).toString();
+            var rightSideLength = rightSide.length
+            var differenceBetweenRightSideLengthAndDecimal =   decimal - rightSideLength;
+
+            return leftSide + '.' + rightSide + repeatZeros(differenceBetweenRightSideLengthAndDecimal);
+        }
+    }
+    //return leftSide + '.' + rightSide;
+  }
+  
+
+  root['myToFixed'] = myToFixed;
+
+}(this));
+
+tests({
+ 
+ 'It should take a number as first argument and return a string representation of the number': function() {
+       var returnOfNumber = myToFixed(100); 
+     
+       eq(returnOfNumber, '100');
+ },
+ 'It should throw an error if number is not a typeof number': function () {
+     try {
+       myToFixed('this is not a number'); 
+      }  catch (e) {
+       
+       eq(e instanceof TypeError, true)
+     }  
+ },
+ 'It should throw an error if decimal is not a number': function() {
+   try {
+       myToFixed(1, "hey im no number"); 
+      }  catch (e) {
+       
+       eq(e instanceof TypeError, true)
+     }  
+ },
+ 'It should dynamically add decimal based on the number passed as 2nd argument to function': function() {
+   var noDecimal = myToFixed(100); 
+   var oneDecimal = myToFixed(100,1);   
+   var twoDecimals = myToFixed(100,2);
+     eq(noDecimal, '100');
+     eq(oneDecimal, '100.0');
+     eq(twoDecimals, '100.00');
+ },
+ 'It should return number without a period if number initially contains a period with a decimal less than 1': function() {
+   var someDecimal = myToFixed(100., 0);
+     eq(someDecimal, '100');
+ },
+ 'It should round 99.99 to 100 if decimal === 0 ': function() {
+   var result = myToFixed(99.99); 
+   
+     eq(result, '100');
+  
+ },
+ 'It should round 99.99 to 100.0 if decimal === 1 ': function() {
+   var result = myToFixed(99.99,1); 
+   
+     eq(result, '100.0');
+  
+ },
+ 'It should round 99.99 to 99.99 if decimal === 2 ': function() {
+   var result = myToFixed(99.99,2); 
+   
+     eq(result, '99.99');
+  
+ },
+ 'It should round 99.99 to 99.9900 if decimal === 4 ': function() {
+   var result = myToFixed(99.99,4); 
+   
+     eq(result, '99.9900');
+  
+ },
+ 
+ 'It should round 0.615 to 1 if decimal === 0 ': function() {
+   var result = myToFixed(0.615); 
+   
+     eq(result, '1');
+  
+ },
+ 'It should round 0.615 to 0.6 if decimal === 1 ': function() {
+   var result = myToFixed(0.615,1); 
+   
+     eq(result, '0.6');
+  
+ },
+ 'It should round 0.615 to 0.62 if decimal === 2 ': function() {
+   var result = myToFixed(0.615,2); 
+   
+     eq(result, '0.62');
+  
+ },
+ 'It should round 10.235 to 10.24 if decimal === 2 ': function() {
+   var result = myToFixed(10.235,2); 
+   
+     eq(result, '10.24');
+  
+ },
+ 'It should round 1.005 to 1.01 if decimal === 2 ': function() {
+   var result = myToFixed(1.005,2); 
+   
+     eq(result, '1.01');
+  
+ }
+ 
+ 
+   });
+</script>
+
